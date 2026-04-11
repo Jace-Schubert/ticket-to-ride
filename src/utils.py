@@ -1,20 +1,27 @@
 import random
 
 def create_graph(num_cities, edges):
+    # Initialize an adjacency matrix with zeros
     graph = [[0] * num_cities for _ in range(num_cities)]
+
+    # Fill the adjacency matrix with the given edges
     for source, destination, weight in edges:
         graph[source][destination] = weight
+
     return graph
 
 
 def get_neighbors(graph, city):
+    # Initialize a list to store neighbors and their weights
     neighbors = []
+
+    # Iterate through the row corresponding to the city in the adjacency matrix
     for dest, weight in enumerate(graph[city]):
         if weight > 0:
             neighbors.append((dest, weight))
+
     return neighbors
 
-#--------------------------------------------------------
 def gen_tickets(num_nodes_in_graph, ticket_count) -> list[int, int]:
     """
     Generates a random set of tickets for the Ticket to Ride problem.
