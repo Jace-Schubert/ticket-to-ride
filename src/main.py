@@ -1,6 +1,6 @@
 from union_find import UnionFind
 from dijkstra import dijkstra
-from utils import get_graph, gen_tickets
+from utils import create_graph, get_graph, gen_tickets
 
 
 def build_railway_network(graph, tickets, node_count):
@@ -66,7 +66,20 @@ def build_railway_network(graph, tickets, node_count):
 
 #------------------------------------------------------------
 def main():
-    graph = get_graph()
+
+    num_cities = 10
+    edges = [
+        (0, 2, 2), (0, 4, 4),
+        (2, 1, 1), (2, 4, 2),
+        (1, 6, 6), (1, 11, 11),  
+        (4, 1, 4), (4, 6, 6),
+        (6, 3, 3), (6, 5, 5),
+        (3, 9, 9), (3, 8, 8),
+        (5, 3, 2), (5, 7, 2),
+    ]
+
+    graph = create_graph(num_cities, edges)
+    graph = create_graph(*get_graph())
     node_count = len(graph)
     tickets = gen_tickets(node_count, 5)
 

@@ -1,7 +1,18 @@
 import random
 
-def get_graph():
-    pass
+def create_graph(num_cities, edges):
+    graph = [[0] * num_cities for _ in range(num_cities)]
+    for source, destination, weight in edges:
+        graph[source][destination] = weight
+    return graph
+
+
+def get_neighbors(graph, city):
+    neighbors = []
+    for dest, weight in enumerate(graph[city]):
+        if weight > 0:
+            neighbors.append((dest, weight))
+    return neighbors
 
 #--------------------------------------------------------
 def gen_tickets(num_nodes_in_graph, ticket_count) -> list[int, int]:
