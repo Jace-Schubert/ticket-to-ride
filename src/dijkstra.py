@@ -1,40 +1,47 @@
 import heapq
 from utils import get_neighbors
 
-def dijkstra(graph, source, destination, k=3):
-    """
-    Wrapper that returns k-shortest paths for use by the main module.
-    """
-    return k_shortest_paths(graph, source, destination, k)
 
-# K-Shortest Paths
-def k_shortest_paths(graph, source, destination, k):
-    # Initialize the number of cities
-    num_cities = len(graph)
+def dijkstra(graph, source, destination):
+    """
+    Standard Dijkstra's algorithm to find the shortest path
+    from source to destination in a weighted directed graph.
+
+    Parameters:
+    -----------
+    graph       : 2D list  -> Adjacency matrix
+    source      : int      -> Starting node
+    destination : int      -> Target node
+
+    Returns:
+    --------
+    (cost, path) : tuple -> Shortest path cost and list of nodes
+                   Returns (float('inf'), []) if no path exists
+    """
 
     # Min-heap: (cost, current_city, path_so_far)
     heap = [(0, source, [source])]
 
-    # List to store the k shortest paths found
-    results = []
+    # Track visited nodes to avoid revisiting
+    visited = set()
 
-    # Counter for the number of paths found to the destination
-    dest_count = 0
-
-    # Loop until the heap is empty and we have found k paths to the destination
-    while heap and dest_count < k:
-        # Pop the path with the lowest cost
+    while heap:
+        # Pop the node with the lowest cost
         cost, current, path = heapq.heappop(heap)
 
-        # If we have reached the destination, add the cost and path to results
+        # If we reached the destination, return the cost and path
         if current == destination:
-            results.append((cost, path))
-            dest_count += 1
-            continue
+            return (cost, path)
 
-        # Explore neighbors of the current city
+        # Skip nodes we have already visited
+        if current in visited:
+            continue
+        visited.add(current)
+
+        # Explore neighbors of the current node
         for neighbor, weight in get_neighbors(graph, current):
-            if neighbor not in path:  # avoid loops within a single path
+            if neighbor not in visited:
                 heapq.heappush(heap, (cost + weight, neighbor, path + [neighbor]))
 
-    return results
+    # No path found
+    return (float('inf'), [])

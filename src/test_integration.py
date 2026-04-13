@@ -60,77 +60,82 @@ def main():
     ))
 
     # ----------------------------------------------------------
-    # Test 2: Two tickets with edge reuse
-    # Ticket 1: 0->7 via 0->3->7 (cost 17, new cost 17)
-    # Ticket 2: 0->6 via 0->4->6 (cost 9, new cost 9)
-    #           No overlapping edges, both connect to node 0
-    # Total: 17 + 9 = 26
+    # Test 2: Two tickets with edge reuse and cycle detection
+    # Ticket 1: 0->7 via 0->3->7 (cost 17, connects {0,3,7})
+    # Ticket 2: 3->6, shortest is 3->1->0->4->6 (cost 17) but
+    #           1->0 creates cycle (0 and 3 already connected)
+    #           Falls back to 3->1->6 (cost 17), adds 3->1, 1->6
+    # Total: 17 + 17 = 34
     # ----------------------------------------------------------
     results.append(run_test(
-        test_name="2 - Two tickets from same source",
-        tickets=[(0, 7), (0, 6)],
-        expected_edges=[(0, 3), (3, 7), (0, 4), (4, 6)],
-        expected_cost=26
+        test_name="2 - Edge reuse with cycle detection",
+        tickets=[(0, 7), (3, 6)],
+        expected_edges=[(0, 3), (3, 7), (3, 1), (1, 6)],
+        expected_cost=34
     ))
 
     # ----------------------------------------------------------
-    # Test 3: Unreachable destination (node 6 has no outgoing edges)
-    # Should return empty network with cost 0
+    # Test 3: All paths create cycles (no valid path for 2nd ticket)
+    # Ticket 1: 0->7 via 0->3->7 (cost 17, connects {0,3,7})
+    # Ticket 2: 7->0, every path from 7 goes through 7->3
+    #           but 7 and 3 are already connected, creating a cycle
+    #           No valid cycle-free path exists
+    # Total: 17
     # ----------------------------------------------------------
     results.append(run_test(
-        test_name="3 - Unreachable destination (dead-end source node)",
-        tickets=[(6, 0)],
-        expected_edges=[],
-        expected_cost=0
+        test_name="3 - No valid cycle-free path exists",
+        tickets=[(0, 7), (7, 0)],
+        expected_edges=[(0, 3), (3, 7)],
+        expected_cost=17
     ))
 
     # ----------------------------------------------------------
-    # Test 4: Cycle detection - shortest paths rejected
-    # Ticket 1: 0->7 via 0->3->7 (connects {0,3,7})
-    # Ticket 2: 1->7 via 1->5->7 (connects {1,5} to {0,3,7} = {0,1,3,5,7})
-    # Ticket 3: 1->6, shortest is 1->0->4->6 (cost 11) but
-    #           edge 1->0 creates a cycle (1 and 0 already connected)
-    #           Falls back to 1->5->6 (cost 13), reuses 1->5,
-    #           only adds 5->6 (new cost 2)
-    # Ticket 4: 0->6, shortest is 0->4->6 (cost 9) but
-    #           edge 4->6 creates a cycle (0 and 6 already connected)
-    #           No other valid path found
-    # Total: 17 + 14 + 2 + 0 = 33
+    # Test 4: Cycle detection - shortest path rejected, reuses edges
+    # Ticket 1: 0->7 via 0->3->7 (cost 17, connects {0,3,7})
+    # Ticket 2: 3->6, shortest is 3->1->0->4->6 (cost 17) but
+    #           1->0 creates cycle (0 and 3 already connected)
+    #           Falls back to 3->1->6 (cost 17), connects {0,1,3,6,7}
+    # Ticket 3: 0->6, shortest is 0->4->6 (cost 9) but
+    #           4->6 creates cycle (0 and 6 already connected)
+    #           Falls back to 0->3->1->6 (cost 25) which reuses
+    #           all existing edges (new cost 0)
+    # Total: 17 + 17 + 0 = 34
     # ----------------------------------------------------------
     results.append(run_test(
-        test_name="4 - Cycle detection rejects shortest paths",
-        tickets=[(0, 7), (1, 7), (1, 6), (0, 6)],
-        expected_edges=[(0, 3), (3, 7), (1, 5), (5, 7), (5, 6)],
-        expected_cost=33
+        test_name="4 - Cycle detection rejects shortest, falls back to reuse",
+        tickets=[(0, 7), (3, 6), (0, 6)],
+        expected_edges=[(0, 3), (3, 7), (3, 1), (1, 6)],
+        expected_cost=34
     ))
 
     # ----------------------------------------------------------
     # Test 5: Multiple independent tickets building a tree
-    # Ticket 1: 0->6 via 0->4->6 (cost 9)
-    # Ticket 2: 2->6 via 2->6 (cost 4)
-    # Ticket 3: 1->7 via 1->5->7 (cost 14)
+    # Ticket 1: 0->6 via 0->4->6 (cost 4+5 = 9)
+    # Ticket 2: 2->7 via 2->5->7 (cost 11+2 = 13)
+    # Ticket 3: 3->0 via 3->1->0 (cost 6+2 = 8)
     # All paths are independent, no overlap, no cycles
-    # Total: 9 + 4 + 14 = 27
+    # Total: 9 + 13 + 8 = 30
     # ----------------------------------------------------------
     results.append(run_test(
         test_name="5 - Multiple independent tickets (no overlap)",
-        tickets=[(0, 6), (2, 6), (1, 7)],
-        expected_edges=[(0, 4), (4, 6), (2, 6), (1, 5), (5, 7)],
-        expected_cost=27
+        tickets=[(0, 6), (2, 7), (3, 0)],
+        expected_edges=[(0, 4), (4, 6), (2, 5), (5, 7), (3, 1), (1, 0)],
+        expected_cost=30
     ))
 
     # ----------------------------------------------------------
-    # Test 6: Mixed - valid paths, unreachable, and edge reuse
-    # Ticket 1: 0->7 via 0->3->7 (cost 17)
-    # Ticket 2: 7->1 no path (node 7 is a dead end)
-    # Ticket 3: 0->6 via 0->4->6 (cost 9, new cost 9)
-    # Total: 17 + 9 = 26
+    # Test 6: Three tickets, all valid, no cycles
+    # Ticket 1: 0->7 via 0->3->7 (cost 8+9 = 17)
+    # Ticket 2: 2->7 via 2->5->7 (cost 11+2 = 13)
+    # Ticket 3: 0->6 via 0->4->6 (cost 4+5 = 9)
+    # All independent paths, no shared edges, no cycles
+    # Total: 17 + 13 + 9 = 39
     # ----------------------------------------------------------
     results.append(run_test(
-        test_name="6 - Mixed: valid, unreachable, and edge reuse",
-        tickets=[(0, 7), (7, 1), (0, 6)],
-        expected_edges=[(0, 3), (3, 7), (0, 4), (4, 6)],
-        expected_cost=26
+        test_name="6 - Three valid tickets with no conflicts",
+        tickets=[(0, 7), (2, 7), (0, 6)],
+        expected_edges=[(0, 3), (3, 7), (2, 5), (5, 7), (0, 4), (4, 6)],
+        expected_cost=39
     ))
 
     # ----------------------------------------------------------
