@@ -1,6 +1,6 @@
 from union_find import UnionFind
 from dijkstra import dijkstra
-from utils import create_graph, get_graph, gen_tickets
+from utils import create_graph, get_graph, get_neighbors, gen_tickets
 
 
 def build_railway_network(graph, tickets, node_count):
@@ -35,29 +35,37 @@ def build_railway_network(graph, tickets, node_count):
 
         # Try each path (shortest first) until one is cycle-free
         path_added = False
+        existing_edges = set((u, v) for u, v, _ in final_network)
+
         for path_cost, path in candidate_paths:
             edges = [(path[i], path[i+1]) for i in range(len(path) - 1)]
+
+            # Only check new edges (skip edges already in the network)
+            new_edges = [e for e in edges if e not in existing_edges]
 
             temp_uf = UnionFind(node_count)
             temp_uf.parent = uf.parent[:]
             temp_uf.rank = uf.rank[:]
 
             cycle_detected = False
-            for u, v in edges:
+            for u, v in new_edges:
                 if not temp_uf.union(u, v):
                     cycle_detected = True
                     print(f"Cycle detected at edge {u} -> {v}, trying next path...")
                     break
 
             if not cycle_detected:
-                for u, v in edges:
+                added_cost = 0
+                for u, v in new_edges:
                     uf.union(u, v)
-                    final_network.append((u, v, path_cost))
+                    edge_weight = graph[u][v]
+                    final_network.append((u, v, edge_weight))
+                    added_cost += edge_weight
 
-                total_cost += path_cost
-                print(f"Path accepted: {path} (cost: {path_cost})")
+                total_cost += added_cost
+                print(f"Path accepted: {path} (cost: {path_cost}, new edges cost: {added_cost})")
                 path_added = True
-                break 
+                break
 
         if not path_added:
             print(f"No valid cycle-free path found for {source} -> {destination}")
@@ -67,18 +75,6 @@ def build_railway_network(graph, tickets, node_count):
 #------------------------------------------------------------
 def main():
 
-    num_cities = 10
-    edges = [
-        (0, 2, 2), (0, 4, 4),
-        (2, 1, 1), (2, 4, 2),
-        (1, 6, 6), (1, 11, 11),  
-        (4, 1, 4), (4, 6, 6),
-        (6, 3, 3), (6, 5, 5),
-        (3, 9, 9), (3, 8, 8),
-        (5, 3, 2), (5, 7, 2),
-    ]
-
-    graph = create_graph(num_cities, edges)
     graph = create_graph(*get_graph())
     node_count = len(graph)
     tickets = gen_tickets(node_count, 5)

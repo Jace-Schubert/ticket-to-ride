@@ -7,6 +7,24 @@ def create_graph(num_cities, edges):
     return graph
 
 
+def get_graph():
+    """
+    Returns the default Ticket to Ride graph as (num_cities, edges).
+    Each edge is (source, destination, weight).
+    Graph from assignment slides (8 cities, 0-7).
+    """
+    num_cities = 8
+    edges = [
+        (1, 0, 2), (0, 3, 8), (0, 4, 4),
+        (1, 3, 6), (1, 5, 11),
+        (2, 4, 1), (2, 6, 4),
+        (4, 6, 5),
+        (5, 6, 2), (5, 7, 3),
+        (3, 7, 9),
+    ]
+    return num_cities, edges
+
+
 def get_neighbors(graph, city):
     neighbors = []
     for dest, weight in enumerate(graph[city]):
